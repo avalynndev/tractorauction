@@ -127,8 +127,7 @@ export async function POST(
           purchase.vehicle.seller.id,
           purchase.vehicle.id,
           purchase.vehicle,
-          purchase.purchasePrice,
-          purchase.buyer
+          purchase.purchasePrice
         ).catch((err) => console.error("Error sending seller sold email:", err));
       }
     } catch (emailError) {

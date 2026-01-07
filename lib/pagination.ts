@@ -26,7 +26,7 @@ export const MAX_LIMIT = 100;
 /**
  * Parse pagination parameters from query string
  */
-export function parsePaginationParams(searchParams: URLSearchParams): PaginationParams {
+export function parsePaginationParams(searchParams: URLSearchParams): { page: number; limit: number } {
   const page = Math.max(1, parseInt(searchParams.get("page") || String(DEFAULT_PAGE), 10));
   const limit = Math.min(
     MAX_LIMIT,

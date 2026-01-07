@@ -111,19 +111,19 @@ export async function POST(
     }
 
     // Create Razorpay order for transaction fee
-    const orderAmount = Math.round(purchase.transactionFee * 100); // Convert to paise
+    const orderAmount = purchase.transactionFee; // Amount in rupees (function converts to paise)
     const orderDescription = `Transaction Fee - ${purchase.vehicle.tractorBrand} ${purchase.vehicle.tractorModel || ""} ${purchase.vehicle.engineHP} HP`;
 
-    const razorpayOrder = await createRazorpayOrder({
-      amount: orderAmount,
-      currency: "INR",
-      receipt: `tx_fee_${purchaseId}_${Date.now()}`,
-      notes: {
+    const razorpayOrder = await createRazorpayOrder(
+      orderAmount,
+      "INR",
+      `tx_fee_${purchaseId}_${Date.now()}`,
+      {
         purchaseId: purchaseId,
         type: "transaction_fee",
         vehicleId: purchase.vehicleId,
-      },
-    });
+      }
+    );
 
     // Update purchase with order ID
     await prisma.purchase.update({

@@ -16,20 +16,6 @@ export async function GET(
     // Get inspection report - only show APPROVED or COMPLETED reports publicly
     const report = await prisma.vehicleInspectionReport.findUnique({
       where: { id: reportId },
-      include: {
-        vehicle: {
-          select: {
-            id: true,
-            tractorBrand: true,
-            tractorModel: true,
-            referenceNumber: true,
-            yearOfMfg: true,
-            engineHP: true,
-            vehicleType: true,
-            status: true, // Only show if vehicle is APPROVED, AUCTION, or SOLD
-          },
-        },
-      },
       select: {
         id: true,
         vehicleId: true,
@@ -57,7 +43,18 @@ export async function GET(
         verifiedBy: true,
         verifiedAt: true,
         verificationNotes: true,
-        vehicle: true,
+        vehicle: {
+          select: {
+            id: true,
+            tractorBrand: true,
+            tractorModel: true,
+            referenceNumber: true,
+            yearOfMfg: true,
+            engineHP: true,
+            vehicleType: true,
+            status: true, // Only show if vehicle is APPROVED, AUCTION, or SOLD
+          },
+        },
       },
     });
 

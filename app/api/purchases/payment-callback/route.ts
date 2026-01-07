@@ -175,8 +175,7 @@ export async function POST(request: NextRequest) {
           purchase.vehicle.seller.id,
           purchase.vehicle.id,
           updatedPurchase.vehicle,
-          purchase.purchasePrice,
-          updatedPurchase.buyer
+          purchase.purchasePrice
         ).catch((err) => console.error("Error sending seller sold email:", err));
       }
     } catch (emailError) {

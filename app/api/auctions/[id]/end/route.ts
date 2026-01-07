@@ -7,7 +7,7 @@ import { notifyAuctionEnded } from "@/lib/email-notifications";
 // Admin: End an auction and determine winner
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -41,7 +41,7 @@ export async function POST(
       );
     }
 
-    const auctionId = params.id;
+    const { id: auctionId } = await params;
 
     const auction = await prisma.auction.findUnique({
       where: { id: auctionId },

@@ -243,7 +243,7 @@ export async function POST(
 
         // Send email notification to seller about auction scheduling
         try {
-          await notifySellerAuctionScheduled(vehicle.sellerId, newAuction.id);
+          await notifySellerAuctionScheduled(vehicle.sellerId, newAuction.id, startTime, endTime);
         } catch (error) {
           console.error("Error sending auction scheduled email:", error);
         }

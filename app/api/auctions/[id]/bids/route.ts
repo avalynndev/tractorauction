@@ -162,6 +162,13 @@ export async function POST(
         },
       },
     });
+
+    if (!auction) {
+      return NextResponse.json(
+        { message: "Auction not found" },
+        { status: 404 }
+      );
+    }
     
     // Check if auction is sealed
     const isSealed = auction.biddingType === "SEALED";
@@ -172,13 +179,6 @@ export async function POST(
     const autoExtendThreshold = auction.autoExtendThreshold ?? 2; // minutes before end
     const maxExtensions = auction.maxExtensions ?? 3;
     const currentExtensionCount = auction.extensionCount ?? 0;
-
-    if (!auction) {
-      return NextResponse.json(
-        { message: "Auction not found" },
-        { status: 404 }
-      );
-    }
 
     const now = new Date();
 

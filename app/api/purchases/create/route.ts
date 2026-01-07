@@ -82,18 +82,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if vehicle is approved
-    if (vehicle.status !== "APPROVED") {
-      return NextResponse.json(
-        { message: "This vehicle is not available for purchase" },
-        { status: 400 }
-      );
-    }
-
     // Check if vehicle is already sold
     if (vehicle.status === "SOLD") {
       return NextResponse.json(
         { message: "This vehicle has already been sold" },
+        { status: 400 }
+      );
+    }
+
+    // Check if vehicle is approved
+    if (vehicle.status !== "APPROVED") {
+      return NextResponse.json(
+        { message: "This vehicle is not available for purchase" },
         { status: 400 }
       );
     }

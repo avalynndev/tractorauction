@@ -253,10 +253,10 @@ export async function GET(
       if (totalCost > 0) {
         yPosition += 3;
         doc.setFontSize(12);
-        doc.setFont(undefined, "bold");
+        doc.setFont("helvetica", "bold");
         doc.text("Total Estimated Cost:", 20, yPosition);
         doc.text(`₹${totalCost.toLocaleString("en-IN")}`, 100, yPosition);
-        doc.setFont(undefined, "normal");
+        doc.setFont("helvetica", "normal");
         yPosition += 8;
       }
     }

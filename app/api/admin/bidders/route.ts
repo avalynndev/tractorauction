@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         isEligibleForBid: true,
         eligibleForBidReason: true,
         createdAt: true,
-        membership: {
+        memberships: {
           where: {
             status: "active",
             endDate: {

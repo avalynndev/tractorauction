@@ -36,7 +36,7 @@ rm -rf node_modules/.cache
 
 # Install dependencies
 echo -e "${YELLOW}Installing dependencies...${NC}"
-npm install
+npm install --legacy-peer-deps
 
 # Generate Prisma client
 echo -e "${YELLOW}Generating Prisma client...${NC}"

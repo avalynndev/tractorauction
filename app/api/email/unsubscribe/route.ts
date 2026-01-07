@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       const parsed = parseUnsubscribeToken(token);
       if (parsed) {
         targetUserId = parsed.userId;
-        targetType = parsed.notificationType;
+        targetType = parsed.notificationType || null;
       }
     }
 

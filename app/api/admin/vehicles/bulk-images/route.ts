@@ -52,8 +52,6 @@ export async function POST(request: NextRequest) {
     // Using a CSV/Excel mapping file: vehicleId, imageType, imageFileName
     
     if (mappingFile) {
-      await loadParsers();
-      
       const fileName = mappingFile.name.toLowerCase();
       const fileBuffer = Buffer.from(await mappingFile.arrayBuffer());
       

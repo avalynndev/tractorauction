@@ -8,7 +8,7 @@ import { calculateTransactionFee } from "@/lib/transaction-fee";
 // Seller: Approve or reject the winning bid
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -29,7 +29,7 @@ export async function POST(
       );
     }
 
-    const auctionId = params.id;
+    const { id: auctionId } = await params;
     const { approvalStatus, rejectionReason } = await request.json();
 
     if (!approvalStatus || !["APPROVED", "REJECTED"].includes(approvalStatus)) {
