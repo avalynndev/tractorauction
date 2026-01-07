@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/watchlist/check-alerts",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
