@@ -1,0 +1,946 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String                   @id @default(cuid())
+  fullName                String
+  phoneNumber             String                   @unique
+  whatsappNumber          String
+  email                   String?                  @unique
+  passwordHash            String?
+  address                 String
+  city                    String
+  district                String
+  state                   String
+  pincode                 String
+  role                    UserRole                 @default(BUYER)
+  registrationType        RegistrationType         @default(INDIVIDUAL)
+  gstNumber               String?
+  isActive                Boolean                  @default(false)
+  registrationFeePaid     Boolean                  @default(false)
+  emdPaid                 Boolean                  @default(false)
+  isEligibleForBid        Boolean                  @default(true)
+  eligibleForBidReason    String?
+  otp                     String?
+  otpExpiry               DateTime?
+  // Account lockout fields
+  failedLoginAttempts     Int                      @default(0)
+  accountLockedUntil      DateTime?
+  lastFailedLoginAt       DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  identificationNumber    String?                  @unique
+  emailUnsubscribed       Boolean                  @default(false)
+  profilePhoto            String?
+  // KYC fields
+  panCard                 String? // Cloudinary URL for PAN card
+  aadharCard              String? // Cloudinary URL for Aadhar card
+  cancelledCheque         String? // Cloudinary URL for cancelled cheque
+  gstCopy                 String? // Cloudinary URL for GST copy
+  cin                     String? // Cloudinary URL for CIN (Corporate Identification Number) - Optional
+  otherDocuments          String? // Cloudinary URL for other KYC documents
+  kycStatus               KYCStatus                @default(PENDING)
+  kycSubmittedAt          DateTime?
+  kycApprovedAt           DateTime?
+  kycRejectedAt           DateTime?
+  kycRejectionReason      String?
+  kycApprovedBy           String? // Admin user ID who approved
+  wonAuctions             Auction[]                @relation("AuctionWinner")
+  bids                    Bid[]
+  memberships             Membership[]
+  purchases               Purchase[]
+  vehicles                Vehicle[]
+  notificationPreferences NotificationPreferences?
+  chats                   Chat[]                   @relation("UserChats")
+  chatMessages            ChatMessage[]            @relation("UserMessages")
+  watchlist               WatchlistItem[]
+  shortlistedItems        ShortlistedItem[]
+  notifications           Notification[]
+  reviews                 Review[]
+  recentViews             RecentView[]
+  platformFeedbacks       PlatformFeedback[]       @relation("PlatformFeedbackReviewer")
+  disputes                Dispute[]                @relation("DisputeFiler")
+  disputesResolved        Dispute[]                @relation("DisputeResolver")
+  earnestMoneyDeposits    EarnestMoneyDeposit[]
+  // Referral fields
+  referralCode            String?                  @unique
+  referredBy              String? // User ID who referred this user
+  referralCount           Int                      @default(0)
+  referralRewards         Float                    @default(0)
+  referrals               Referral[]               @relation("Referrer")
+  referredByUser          User?                    @relation("UserReferrer", fields: [referredBy], references: [id], onDelete: SetNull)
+  usersReferred           User[]                   @relation("UserReferrer")
+  referredUsers           Referral[]               @relation("ReferredUser")
+  // OEM relationship - dealers monitored by OEM
+  monitoredByOEMId        String?
+  monitoredByOEM          OEM?                     @relation("OEMMonitoredDealers", fields: [monitoredByOEMId], references: [id], onDelete: SetNull)
+
+  @@index([phoneNumber])
+  @@index([monitoredByOEMId])
+  @@index([email])
+  @@index([identificationNumber])
+  @@index([referralCode])
+  @@index([referredBy])
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  userId         String
+  membershipType MembershipType @default(TRIAL)
+  startDate      DateTime       @default(now())
+  endDate        DateTime
+  amount         Float          @default(0)
+  status         String         @default("active")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Vehicle {
+  id                  String                    @id @default(cuid())
+  sellerId            String
+  vehicleType         VehicleType
+  saleType            SaleType
+  saleAmount          Float
+  basePrice           Float?
+  tractorBrand        String
+  engineHP            String
+  yearOfMfg           Int
+  registrationNumber  String?
+  engineNumber        String?
+  chassisNumber       String?
+  hoursRun            String?
+  state               String
+  runningCondition    String
+  insuranceStatus     String
+  rcCopyStatus        String
+  rcCopyType          String?
+  readyForToken       String?
+  clutchType          String?
+  ipto                Boolean?
+  drive               String?
+  steering            String?
+  tyreBrand           String?
+  otherFeatures       String?
+  confirmationMessage Boolean                   @default(false)
+  status              VehicleStatus             @default(PENDING)
+  mainPhoto           String?
+  subPhotos           String[]                  @default([])
+  videoUrl            String?                   // Cloudinary video URL
+  videoThumbnail      String?                   // Video thumbnail URL
+  liveStreamUrl       String?                   // Live stream URL (HLS/DASH)
+  liveStreamKey       String?                   // Live stream key for broadcasting
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  financeNocPapers    String?
+  tractorModel        String?
+  isCertified         Boolean                   @default(false)
+  isFinanceAvailable  Boolean                   @default(false)
+  oem                 String?                   // Original Equipment Manufacturer
+  district            String?
+  referenceNumber     String?
+  blockchainHash      String?                   @unique // Cryptographic hash for blockchain verification
+  blockchainTxHash    String?                   // Transaction hash if stored on blockchain
+  blockchainVerified   Boolean                  @default(false) // Whether verified on blockchain
+  blockchainVerifiedAt DateTime?
+  auction             Auction?
+  purchases           Purchase[]
+  seller              User                      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  watchlistItems      WatchlistItem[]
+  shortlistedItems    ShortlistedItem[]
+  reviews             Review[]
+  recentViews         RecentView[]
+  inspectionReports   VehicleInspectionReport[]
+  disputes            Dispute[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([saleType])
+  @@index([referenceNumber])
+}
+
+model Auction {
+  id                   String                @id @default(cuid())
+  vehicleId            String                @unique
+  startTime            DateTime
+  endTime              DateTime
+  currentBid           Float                 @default(0)
+  reservePrice         Float
+  minimumIncrement     Float
+  status               AuctionStatus         @default(SCHEDULED)
+  winnerId             String?
+  sellerApprovalStatus SellerApprovalStatus  @default(PENDING)
+  biddingType          BiddingType           @default(SEALED)
+  bidVisibility        BidVisibility         @default(HIDDEN)
+  autoExtendEnabled    Boolean               @default(true)
+  autoExtendMinutes    Int                   @default(5)
+  autoExtendThreshold  Int                   @default(2)
+  maxExtensions        Int                   @default(3)
+  extensionCount       Int                   @default(0)
+  emdAmount            Float? // Earnest Money Deposit amount
+  emdRequired          Boolean               @default(false)
+  isLiveStreaming      Boolean               @default(false) // Whether live stream is active
+  liveStreamUrl        String?               // HLS/DASH stream URL for live viewing
+  liveStreamKey        String?               // Stream key for broadcaster
+  liveStreamStatus     String?               // "idle" | "starting" | "live" | "ended"
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  referenceNumber      String?
+  rejectionReason      String?
+  approvalDeadline     DateTime?             @db.Timestamp(6)
+  blockchainHash       String?                @unique // Cryptographic hash for auction verification
+  blockchainTxHash     String?                // Transaction hash if stored on blockchain
+  blockchainVerified   Boolean                @default(false)
+  blockchainVerifiedAt DateTime?
+  vehicle              Vehicle               @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  winner               User?                 @relation("AuctionWinner", fields: [winnerId], references: [id])
+  bids                 Bid[]
+  disputes             Dispute[]
+  earnestMoneyDeposits EarnestMoneyDeposit[]
+
+  @@index([status])
+  @@index([endTime])
+  @@index([referenceNumber])
+}
+
+model Bid {
+  id                String   @id @default(cuid())
+  auctionId         String
+  bidderId          String
+  bidAmount         Float
+  bidTime           DateTime @default(now())
+  isWinningBid      Boolean  @default(false)
+  blockchainHash    String?  @unique // Cryptographic hash for bid verification
+  blockchainTxHash  String?  // Transaction hash if stored on blockchain
+  blockchainVerified Boolean @default(false)
+  blockchainVerifiedAt DateTime?
+  createdAt         DateTime @default(now())
+  auction           Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder            User     @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@index([auctionId])
+  @@index([bidderId])
+}
+
+model Purchase {
+  id                      String    @id @default(cuid())
+  vehicleId               String
+  buyerId                 String
+  purchasePrice           Float
+  purchaseType            SaleType
+  status                  String    @default("pending")
+  balanceAmount           Float? // Balance after EMD applied (for auction purchases)
+  emdApplied              Boolean   @default(false)
+  emdAmount               Float? // EMD amount applied to this purchase
+  transactionFee          Float? // Transaction fee (2.5% with offer, 4% standard)
+  transactionFeePaid      Boolean   @default(false)
+  transactionFeePaymentId String? // Razorpay payment ID for transaction fee
+  paymentId               String? // Razorpay payment ID for balance payment
+  orderId                 String? // Razorpay order ID
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  buyer                   User      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  vehicle                 Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  escrow                  Escrow?
+  delivery                Delivery?
+  disputes                Dispute[]
+  blockchainHash          String?  @unique // Cryptographic hash for purchase verification
+  blockchainTxHash        String?  // Transaction hash if stored on blockchain
+  blockchainVerified      Boolean  @default(false)
+  blockchainVerifiedAt    DateTime?
+
+  @@index([buyerId])
+  @@index([vehicleId])
+}
+
+model EarnestMoneyDeposit {
+  id               String    @id @default(cuid())
+  auctionId        String
+  bidderId         String
+  amount           Float
+  status           EMDStatus @default(PENDING)
+  paymentMethod    String? // Razorpay, Test Mode, etc.
+  paymentId        String?
+  paymentReference String?
+  paidAt           DateTime?
+  refundedAt       DateTime?
+  appliedToBalance Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidder  User    @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@unique([auctionId, bidderId])
+  @@index([auctionId])
+  @@index([bidderId])
+  @@index([status])
+}
+
+model Escrow {
+  id                 String       @id @default(cuid())
+  purchaseId         String       @unique
+  amount             Float
+  escrowFee          Float        @default(0)
+  status             EscrowStatus @default(PENDING)
+  paymentMethod      String? // Razorpay, UPI, Bank Transfer, etc.
+  paymentId          String? // Payment gateway transaction ID
+  paymentReference   String? // Reference number from payment gateway
+  heldAt             DateTime     @default(now())
+  releasedAt         DateTime?
+  refundedAt         DateTime?
+  releaseReason      String?
+  refundReason       String?
+  disputeRaised      Boolean      @default(false)
+  disputeRaisedBy    String? // buyerId or sellerId
+  disputeDescription String?
+  disputeResolved    Boolean      @default(false)
+  disputeResolution  String?
+  resolvedBy         String? // Admin user ID
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  purchase           Purchase     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseId])
+  @@index([status])
+  @@index([paymentId])
+}
+
+model Delivery {
+  id         String         @id @default(cuid())
+  purchaseId String         @unique
+  status     DeliveryStatus @default(PENDING)
+  method     DeliveryMethod @default(PICKUP)
+
+  // Pickup/Delivery Address
+  pickupAddress      String? // Seller's address
+  pickupCity         String?
+  pickupState        String?
+  pickupPincode      String?
+  pickupContactName  String?
+  pickupContactPhone String?
+
+  deliveryAddress      String? // Buyer's delivery address
+  deliveryCity         String?
+  deliveryState        String?
+  deliveryPincode      String?
+  deliveryContactName  String?
+  deliveryContactPhone String?
+
+  // Scheduling
+  scheduledDate         DateTime? // Scheduled pickup/delivery date
+  estimatedDeliveryDate DateTime? // Estimated delivery date
+  actualDeliveryDate    DateTime? // Actual delivery date
+
+  // Logistics
+  transporterName  String? // Transport company name
+  transporterPhone String? // Transport company contact
+  trackingNumber   String? // Tracking number for shipment
+  vehicleNumber    String? // Transport vehicle number
+  driverName       String? // Driver name
+  driverPhone      String? // Driver contact number
+
+  // Status updates
+  dispatchedAt     DateTime? // When vehicle was dispatched
+  inTransitAt      DateTime? // When vehicle started transit
+  outForDeliveryAt DateTime? // When out for delivery
+  deliveredAt      DateTime? // When actually delivered
+
+  // Notes and issues
+  notes         String? // Internal notes
+  deliveryNotes String? // Delivery notes for buyer
+  failureReason String? // Reason if delivery failed
+  returnReason  String? // Reason if returned
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseId])
+  @@index([status])
+  @@index([trackingNumber])
+  @@index([scheduledDate])
+}
+
+enum EscrowStatus {
+  PENDING // Payment initiated but not confirmed
+  HELD // Payment confirmed, funds held in escrow
+  RELEASED // Funds released to seller
+  REFUNDED // Funds refunded to buyer
+  DISPUTE // Dispute raised, under review
+  CANCELLED // Escrow cancelled
+}
+
+enum DeliveryStatus {
+  PENDING // Delivery not yet initiated
+  SCHEDULED // Delivery scheduled
+  IN_TRANSIT // Vehicle is in transit
+  OUT_FOR_DELIVERY // Out for delivery to buyer
+  DELIVERED // Successfully delivered
+  FAILED // Delivery attempt failed
+  CANCELLED // Delivery cancelled
+  RETURNED // Returned to seller
+}
+
+enum DeliveryMethod {
+  PICKUP // Buyer picks up from seller location
+  SELLER_DELIVERY // Seller arranges delivery
+  PLATFORM_DELIVERY // Platform arranges delivery
+  THIRD_PARTY // Third-party logistics provider
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+  DEALER
+}
+
+enum MembershipType {
+  TRIAL
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum VehicleType {
+  USED_TRACTOR
+  USED_HARVESTER
+  SCRAP_TRACTOR
+}
+
+enum SaleType {
+  AUCTION
+  PREAPPROVED
+}
+
+enum VehicleStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  AUCTION
+  SOLD
+}
+
+enum AuctionStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+enum SellerApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BiddingType {
+  OPEN // Bids visible to all (traditional open auction)
+  SEALED // Bids hidden until auction ends (closed/sealed auction)
+}
+
+enum BidVisibility {
+  VISIBLE // Show bids to all users
+  HIDDEN // Hide bids from other users (sealed bidding)
+}
+
+enum EMDStatus {
+  PENDING // Payment initiated
+  PAID // Payment confirmed
+  REFUNDED // Refunded to non-winner
+  FORFEITED // Forfeited due to non-payment
+  APPLIED // Applied to balance payment
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RegistrationType {
+  INDIVIDUAL
+  FIRM
+}
+
+model NotificationPreferences {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  vehicleApproved       Boolean  @default(true)
+  vehicleRejected       Boolean  @default(true)
+  auctionScheduled      Boolean  @default(true)
+  auctionStarted        Boolean  @default(true)
+  auctionEnded          Boolean  @default(true)
+  bidPlaced             Boolean  @default(true)
+  bidOutbid             Boolean  @default(true)
+  bidApproved           Boolean  @default(true)
+  bidRejected           Boolean  @default(true)
+  membershipExpiring    Boolean  @default(true)
+  membershipExpired     Boolean  @default(true)
+  watchlistPriceDrop    Boolean  @default(true) // Price drop alerts for watchlist items
+  watchlistAuctionStart Boolean  @default(true) // Auction start alerts for watchlist items
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailEvent {
+  id               String   @id @default(cuid())
+  userId           String
+  email            String
+  notificationType String
+  eventType        String // open, click, delivered, bounced, spam, unsubscribe
+  eventData        String? // JSON string for additional data
+  timestamp        DateTime @default(now())
+  userAgent        String?
+  ipAddress        String?
+
+  @@index([userId])
+  @@index([email])
+  @@index([notificationType])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+model Chat {
+  id            String        @id @default(cuid())
+  userId        String
+  status        ChatStatus    @default(OPEN)
+  lastMessageAt DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation("UserChats", fields: [userId], references: [id], onDelete: Cascade)
+  messages      ChatMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  chatId    String
+  senderId  String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User     @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@index([isRead])
+}
+
+enum ChatStatus {
+  OPEN
+  CLOSED
+  RESOLVED
+}
+
+model WatchlistItem {
+  id                String   @id @default(cuid())
+  userId            String
+  vehicleId         String
+  lastKnownPrice    Float? // Track price for price drop alerts
+  lastNotifiedPrice Float? // Last price we sent notification for
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle           Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vehicleId])
+  @@index([userId])
+  @@index([vehicleId])
+}
+
+model ShortlistedItem {
+  id        String   @id @default(cuid())
+  userId    String
+  vehicleId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vehicleId])
+  @@index([userId])
+  @@index([vehicleId])
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  vehicleId    String
+  reviewerId   String
+  rating       Int // 1-5 stars
+  title        String?
+  comment      String?
+  isVerified   Boolean  @default(false) // Verified purchase
+  helpfulCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  vehicle      Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  reviewer     User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([reviewerId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model PlatformFeedback {
+  id                   String         @id @default(cuid())
+  reviewerId           String
+  businessRating       Int // 1-5 stars
+  serviceRating        Int // 1-5 stars
+  webAppRating         Int // 1-5 stars
+  mobileAppRating      Int // 1-5 stars
+  detailedFeedback     String // Detailed feedback text
+  tractorIndustrySince Int? // Year they started in tractor industry
+  status               FeedbackStatus @default(PENDING)
+  approvedBy           String? // Admin user ID who approved
+  approvedAt           DateTime?
+  rejectedAt           DateTime?
+  rejectionReason      String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  reviewer             User           @relation("PlatformFeedbackReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([reviewerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum FeedbackStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model RecentView {
+  id        String   @id @default(cuid())
+  userId    String
+  vehicleId String
+  viewedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([vehicleId])
+  @@index([viewedAt])
+}
+
+model Valuer {
+  id                     String   @id @default(cuid())
+  valuerName             String
+  phoneNumber            String   @unique
+  whatsappNumber         String
+  registrationNumber     String   @unique // Certification number
+  registrationExpiryDate DateTime
+  state                  String
+  district               String
+  city                   String
+  address                String
+  pincode                String?
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  inspections VehicleInspectionReport[]
+
+  @@index([state])
+  @@index([district])
+  @@index([isActive])
+  @@index([registrationNumber])
+}
+
+model OEM {
+  id                     String   @id @default(cuid())
+  oemName                String
+  phoneNumber            String   @unique
+  email                  String?  @unique
+  
+  // Country Retail Head
+  countryRetailHead      String?
+  countryRetailHeadPhone String?
+  countryRetailHeadEmail String?
+  
+  // Zonal Retail Head
+  zonalRetailHead        String?
+  zonalRetailHeadPhone   String?
+  zonalRetailHeadEmail   String?
+  
+  // State Retail Head
+  stateRetailHead        String?
+  stateRetailHeadPhone   String?
+  stateRetailHeadEmail   String?
+  
+  // Country Sales Head
+  countrySalesHead       String?
+  countrySalesHeadPhone  String?
+  countrySalesHeadEmail  String?
+  
+  // Zonal Sales Head
+  zonalSalesHead         String?
+  zonalSalesHeadPhone    String?
+  zonalSalesHeadEmail    String?
+  
+  // State Sales Head
+  stateSalesHead         String?
+  stateSalesHeadPhone    String?
+  stateSalesHeadEmail    String?
+  
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relationship to Dealers (Users with role DEALER)
+  monitoredDealers       User[]   @relation("OEMMonitoredDealers")
+
+  @@index([phoneNumber])
+  @@index([email])
+  @@index([isActive])
+}
+
+model VehicleInspectionReport {
+  id             String           @id @default(cuid())
+  vehicleId      String
+  inspectedBy    String // Admin user ID or inspector name
+  inspectionDate DateTime         @default(now())
+  inspectionType InspectionType   @default(COMPREHENSIVE)
+  status         InspectionStatus @default(PENDING)
+
+  // Scheduling
+  scheduledDate     DateTime? // When inspection is scheduled
+  scheduledBy       String? // Admin user ID who scheduled
+  assignedInspector String? // User ID of assigned inspector
+  assignedValuerId  String? // Valuer ID (foreign key)
+
+  // Inspection Details
+  engineCondition       String? // Excellent, Good, Fair, Poor
+  transmissionCondition String?
+  hydraulicSystem       String?
+  electricalSystem      String?
+  bodyCondition         String?
+  tyreCondition         String?
+  overallCondition      String?
+
+  // Mileage/Hours
+  odometerReading String?
+  hoursRun        String?
+
+  // Issues Found
+  issuesFound    String? // JSON array or text description
+  issuesCount    Int     @default(0)
+  criticalIssues Int     @default(0)
+
+  // Repair Cost Estimates (JSON: { "engine": 5000, "transmission": 10000, ... })
+  estimatedRepairCosts String? // JSON object with component-wise cost estimates
+  totalEstimatedCost   Float? // Total estimated repair cost
+
+  // Documentation
+  inspectionPhotos   String[] @default([]) // Array of photo URLs
+  inspectionDocument String? // PDF or document URL
+  notes              String? // Additional notes
+
+  // Verification
+  verifiedBy        String? // Admin user ID who verified
+  verifiedAt        DateTime?
+  verificationNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  valuer  Valuer? @relation(fields: [assignedValuerId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([status])
+  @@index([inspectionDate])
+  @@index([inspectedBy])
+  @@index([scheduledDate])
+  @@index([assignedInspector])
+  @@index([assignedValuerId])
+}
+
+enum InspectionType {
+  BASIC // Basic visual inspection
+  COMPREHENSIVE // Full detailed inspection
+  PRE_SALE // Inspection before sale
+  POST_SALE // Inspection after sale
+  WARRANTY // Warranty inspection
+}
+
+enum InspectionStatus {
+  PENDING // Inspection scheduled but not completed
+  IN_PROGRESS // Inspection currently being conducted
+  COMPLETED // Inspection completed
+  APPROVED // Inspection approved by admin
+  REJECTED // Inspection rejected (needs re-inspection)
+  EXPIRED // Inspection expired (needs renewal)
+}
+
+model Dispute {
+  id          String          @id @default(cuid())
+  filerId     String // User who filed the dispute
+  purchaseId  String? // Related purchase (if applicable)
+  auctionId   String? // Related auction (if applicable)
+  vehicleId   String? // Related vehicle
+  disputeType DisputeType
+  reason      String // Short reason/title
+  description String // Detailed description
+  evidence    String[]        @default([]) // Array of evidence URLs (photos, documents)
+  status      DisputeStatus   @default(PENDING)
+  priority    DisputePriority @default(MEDIUM)
+
+  // Resolution
+  resolvedBy       String? // Admin user ID who resolved
+  resolvedAt       DateTime?
+  resolution       String? // Resolution details
+  resolutionAction String? // Refund, Return, Replacement, etc.
+  refundAmount     Float? // If refund is part of resolution
+
+  // Communication
+  adminComments String? // Admin internal notes
+  filerComments String? // Additional comments from filer
+  lastUpdatedBy String? // Last user/admin who updated
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  filer    User      @relation("DisputeFiler", fields: [filerId], references: [id], onDelete: Cascade)
+  resolver User?     @relation("DisputeResolver", fields: [resolvedBy], references: [id])
+  purchase Purchase? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  auction  Auction?  @relation(fields: [auctionId], references: [id], onDelete: SetNull)
+  vehicle  Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([filerId])
+  @@index([purchaseId])
+  @@index([auctionId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([disputeType])
+  @@index([createdAt])
+}
+
+enum DisputeType {
+  REFUND_REQUEST // Request for refund
+  RETURN_REQUEST // Request to return vehicle
+  QUALITY_ISSUE // Vehicle quality/condition issue
+  MISMATCH_DESCRIPTION // Vehicle doesn't match description
+  DELIVERY_ISSUE // Delivery/shipping problem
+  PAYMENT_ISSUE // Payment related issue
+  SELLER_MISCONDUCT // Seller behavior issue
+  FRAUD // Suspected fraud
+  OTHER // Other issues
+}
+
+enum DisputeStatus {
+  PENDING // Dispute filed, awaiting review
+  UNDER_REVIEW // Admin is reviewing
+  RESOLVED // Dispute resolved
+  REJECTED // Dispute rejected
+  CLOSED // Dispute closed
+  ESCALATED // Escalated to higher authority
+}
+
+enum DisputePriority {
+  LOW // Low priority
+  MEDIUM // Medium priority
+  HIGH // High priority
+  URGENT // Urgent - needs immediate attention
+}
+
+enum NotificationType {
+  WATCHLIST_PRICE_DROP // Price dropped on watchlist item
+  WATCHLIST_AUCTION_START // Auction started for watchlist item
+  VEHICLE_APPROVED
+  VEHICLE_REJECTED
+  AUCTION_SCHEDULED
+  AUCTION_STARTED
+  AUCTION_ENDED
+  BID_PLACED
+  BID_OUTBID
+  BID_APPROVED
+  BID_REJECTED
+  MEMBERSHIP_EXPIRING
+  MEMBERSHIP_EXPIRED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  vehicleId String? // Related vehicle ID (if applicable)
+  auctionId String? // Related auction ID (if applicable)
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+model Referral {
+  id             String         @id @default(cuid())
+  referrerId     String // User who made the referral
+  referredUserId String // User who was referred
+  referralCode   String // The code that was used
+  status         ReferralStatus @default(PENDING)
+  rewardAmount   Float          @default(0)
+  rewardType     String? // e.g., "DISCOUNT", "CREDIT", "CASHBACK"
+  rewardGiven    Boolean        @default(false)
+  rewardGivenAt  DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  referrer       User           @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser   User           @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, referredUserId])
+  @@index([referrerId])
+  @@index([referredUserId])
+  @@index([referralCode])
+  @@index([status])
+}
+
+model BlockchainRecord {
+  id                String   @id @default(cuid())
+  recordType        String   // "VEHICLE" | "AUCTION" | "BID" | "PURCHASE" | "TRANSFER"
+  recordId          String   // ID of the related record
+  previousHash      String?  // Hash of previous record (chain linking)
+  dataHash          String   // Hash of the record data
+  blockHash         String   // Combined hash (previous + data)
+  blockchainTxHash   String?  // Transaction hash if stored on external blockchain
+  verified          Boolean  @default(false)
+  verifiedAt        DateTime?
+  metadata          String?  // JSON string for additional data
+  createdAt         DateTime @default(now())
+
+  @@index([recordType, recordId])
+  @@index([blockHash])
+  @@index([blockchainTxHash])
+  @@unique([recordType, recordId])
+}
+
+enum ReferralStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  EXPIRED
+}

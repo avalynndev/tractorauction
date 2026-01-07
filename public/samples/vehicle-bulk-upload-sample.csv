@@ -1,0 +1,5 @@
+vehicleType,saleType,saleAmount,tractorBrand,tractorModel,engineHP,yearOfMfg,registrationNumber,engineNumber,chassisNumber,hoursRun,state,district,runningCondition,insuranceStatus,rcCopyStatus,rcCopyType,financeNocPapers,readyForToken,clutchType,ipto,drive,steering,tyreBrand,otherFeatures
+USED_TRACTOR,PREAPPROVED,350000,MAHINDRA,575 DI,45,2018,TS09AB1234,ENG123456,CHS987654,2500,Telangana,Hyderabad,Self Start,Active,Active,Commercial,Available,Ready For Token,Dual,true,2 WD,Power,MRF,"Working Battery; Bumper; Draw Bar"
+USED_TRACTOR,AUCTION,450000,SWARAJ,735 FE,38,2019,TS10CD5678,ENG654321,CHS123789,1800,Telangana,Warangal Urban,Self Start,Active,Active,Private,Not Available,"Within 10 Days",Single,false,4 WD,Mechanical,CEAT,"Working Battery; Draw Bar"
+
+

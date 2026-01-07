@@ -1,0 +1,31 @@
+// Add this to the end of your schema.prisma file
+
+model Referral {
+  id              String   @id @default(cuid())
+  referrerId      String   // User who made the referral
+  referredUserId  String   // User who was referred
+  referralCode    String   // The code that was used
+  status          ReferralStatus @default(PENDING)
+  rewardAmount    Float    @default(0)
+  rewardType      String?  // e.g., "DISCOUNT", "CREDIT", "CASHBACK"
+  rewardGiven     Boolean  @default(false)
+  rewardGivenAt   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  referrer        User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser    User     @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, referredUserId])
+  @@index([referrerId])
+  @@index([referredUserId])
+  @@index([referralCode])
+  @@index([status])
+}
+
+enum ReferralStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  EXPIRED
+}
+
